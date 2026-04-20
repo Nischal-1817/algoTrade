@@ -1,0 +1,29 @@
+# Secrets — never commit
+credentials.py
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Runtime outputs
+logs/*
+!logs/.gitkeep
+reports/*.html
+reports/*.json
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp

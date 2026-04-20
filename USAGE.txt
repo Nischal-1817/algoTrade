@@ -1,0 +1,19 @@
+Quick start (from this folder)
+
+1) pip install -r requirements.txt
+
+2) Backtest (Yahoo NSE history, no broker needed):
+   python scripts/run_backtest.py --symbol RELIANCE --start 2020-01-01
+   Open the HTML file written under reports\
+
+3) Dashboard:
+   streamlit run dashboard/app.py
+
+4) Test Groww login only (no orders):
+   python scripts/check_groww.py
+
+Live orders stay OFF unless you set BOTH environment variables:
+ENABLE_LIVE_TRADING=1
+LIVE_TRADING_CONFIRM=I_UNDERSTAND_RISK
+
+Keep credentials.py out of git; copy from credentials.example.py.
