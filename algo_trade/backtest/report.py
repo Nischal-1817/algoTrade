@@ -71,10 +71,47 @@ def _fig_price_signals(ohlcv: pd.DataFrame) -> go.Figure:
         fig.add_trace(
             go.Scatter(x=ohlcv.index, y=ohlcv["sma_slow"], name="Slow SMA", line=dict(color="#ca8a04"))
         )
+    if "bb_lower" in ohlcv.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=ohlcv.index,
+                y=ohlcv["bb_lower"],
+                name="BB lower",
+                line=dict(color="#dc2626", dash="dot"),
+            )
+        )
+    if "bb_mid" in ohlcv.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=ohlcv.index,
+                y=ohlcv["bb_mid"],
+                name="BB mid",
+                line=dict(color="#64748b", dash="dash"),
+            )
+        )
+    if "bb_upper" in ohlcv.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=ohlcv.index,
+                y=ohlcv["bb_upper"],
+                name="BB upper",
+                line=dict(color="#16a34a", dash="dot"),
+            )
+        )
+    if "sma_trend" in ohlcv.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=ohlcv.index,
+                y=ohlcv["sma_trend"],
+                name="Trend SMA",
+                line=dict(color="#7c3aed"),
+            )
+        )
+    title = "Price and bands" if "bb_mid" in ohlcv.columns else "Price and moving averages"
     fig.update_layout(
         height=420,
         margin=dict(l=48, r=24, t=40, b=48),
-        title="Price and moving averages",
+        title=title,
     )
     fig.update_yaxes(title_text="Price")
     return fig

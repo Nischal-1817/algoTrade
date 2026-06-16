@@ -36,6 +36,7 @@ def run_long_only_next_open(
     commission_pct: float,
     slippage_pct: float,
     price_col: str = "close",
+    use_kelly_sizing: bool = False,
 ) -> Dict[str, Any]:
     """
     `ohlcv` must include columns: open, position_target (0/1).
@@ -46,6 +47,12 @@ def run_long_only_next_open(
     if "open" not in df.columns or "position_target" not in df.columns:
         raise ValueError("ohlcv needs 'open' and 'position_target'")
     df["position_target"] = df["position_target"].fillna(0).astype(int)
+
+    from algo_trade.risk.kelly import load_kelly_config, kelly_fraction_from_trade_returns
+
+    kelly_cfg = load_kelly_config()
+    closed_returns_pct: List[float] = []
+    last_kelly_fraction = 1.0 if not use_kelly_sizing else kelly_cfg.min_fraction
 
     cash = float(initial_capital)
     shares = 0.0
@@ -66,7 +73,13 @@ def run_long_only_next_open(
         next_ts = df.index[i + 1]
 
         if prev_target == 0 and target == 1 and shares == 0:
-            spendable = cash
+            if use_kelly_sizing:
+                last_kelly_fraction = kelly_fraction_from_trade_returns(
+                    closed_returns_pct, config=kelly_cfg
+                )
+                spendable = cash * last_kelly_fraction
+            else:
+                spendable = cash
             if spendable > 0:
                 px = _apply_costs(next_open, "buy", commission_pct, slippage_pct)
                 qty = spendable / px
@@ -87,6 +100,10 @@ def run_long_only_next_open(
             cash += shares * px
             current.exit_time = next_ts
             current.exit_price = px
+            if use_kelly_sizing and current.entry_price > 0:
+                closed_returns_pct.append(
+                    (current.exit_price / current.entry_price - 1.0) * 100.0
+                )
             logger.debug("SELL %s qty=%.4f @ %.4f", next_ts, shares, px)
             shares = 0.0
             current = None
@@ -118,4 +135,6 @@ def run_long_only_next_open(
         "final_cash": cash,
         "final_shares": shares,
         "final_equity": float(equity_s.iloc[-1]),
+        "kelly_sizing": use_kelly_sizing,
+        "last_kelly_fraction": last_kelly_fraction if use_kelly_sizing else 1.0,
     }

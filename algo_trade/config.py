@@ -13,6 +13,7 @@ load_dotenv()
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LOG_DIR = PROJECT_ROOT / "logs"
 REPORT_DIR = PROJECT_ROOT / "reports"
+DATA_DIR = PROJECT_ROOT / "data"
 
 
 @dataclass
@@ -42,3 +43,4 @@ def get_settings() -> Settings:
 def ensure_dirs() -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)

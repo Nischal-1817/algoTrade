@@ -64,7 +64,55 @@ def get_groww_client():
 def live_trading_allowed() -> bool:
     ok = os.getenv("ENABLE_LIVE_TRADING", "").lower() in ("1", "true", "yes")
     phrase = os.getenv("LIVE_TRADING_CONFIRM", "")
-    return ok and phrase == "I_UNDERSTAND_RISK"
+    groww = os.getenv("ALLOW_GROWW_ORDERS", "1").lower() in ("1", "true", "yes")
+    return ok and phrase == "I_UNDERSTAND_RISK" and groww
+
+
+def groww_exchange_symbol(symbol: str) -> str:
+    """Groww LTP key format e.g. NSE_SBIN."""
+    sym = symbol.strip().upper().replace(".NS", "")
+    return f"NSE_{sym}"
+
+
+def get_ltp(client, symbol: str) -> float:
+    from growwapi import GrowwAPI
+
+    key = groww_exchange_symbol(symbol)
+    resp = client.get_ltp(
+        segment=GrowwAPI.SEGMENT_CASH,
+        exchange_trading_symbols=key,
+        timeout=15,
+    )
+    if key in resp:
+        return float(resp[key])
+    if isinstance(resp, dict) and resp:
+        return float(next(iter(resp.values())))
+    raise RuntimeError(f"Groww LTP missing for {key}: {resp}")
+
+
+def get_cash_balance(client) -> float:
+    """Available CNC cash for equity delivery orders."""
+    m = client.get_available_margin_details(timeout=15)
+    eq = m.get("equity_margin_details") or {}
+    cash = eq.get("cnc_balance_available")
+    if cash is not None:
+        return float(cash)
+    return float(m.get("clear_cash", 0) or 0)
+
+
+def place_cnc_market(
+    *,
+    trading_symbol: str,
+    quantity: int,
+    buy: bool,
+    remarks: str = "algo_trade",
+) -> dict:
+    """NSE CNC market order via Groww."""
+    return place_market_order_example(
+        trading_symbol=trading_symbol.upper().replace(".NS", ""),
+        quantity=quantity,
+        transaction_type_buy=buy,
+    )
 
 
 def place_market_order_example(

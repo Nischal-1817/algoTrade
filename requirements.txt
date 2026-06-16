@@ -4,5 +4,7 @@ yfinance>=0.2.40
 plotly>=5.18.0
 streamlit>=1.32.0
 growwapi>=1.0.0
+NorenRestApiPy>=0.0.22
+websocket-client>=1.6.0
 pyotp>=2.9.0
 python-dotenv>=1.0.0
