@@ -1,6 +1,0 @@
-# Install on AWS EC2 together with parent repo:
-#   pip install -r ../requirements.txt -r aws_gateway/requirements.txt
-
-flask>=3.0.0
-gunicorn>=22.0.0
-requests>=2.31.0

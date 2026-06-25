@@ -1,0 +1,19 @@
+[Unit]
+Description=algoTrade Angel live trading (NSE 09:00-15:30 IST)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/algoTrade
+EnvironmentFile=-/home/ec2-user/algoTrade/.env
+Environment=TZ=Asia/Kolkata ENABLE_LIVE_TRADING=1 LIVE_TRADING_CONFIRM=I_UNDERSTAND_REAL_MONEY ALGO_MODE=dynamic ALGO_MAX_SLOTS=4 ALGO_CAPITAL=20000
+ExecStart=/home/ec2-user/algoTrade/.venv/bin/python scripts/market_hours_runner.py --live
+Restart=always
+RestartSec=120
+StandardOutput=append:/home/ec2-user/algoTrade/logs/live_service.log
+StandardError=append:/home/ec2-user/algoTrade/logs/live_service.log
+
+[Install]
+WantedBy=multi-user.target

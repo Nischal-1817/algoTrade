@@ -1,0 +1,17 @@
+[Unit]
+Description=algoTrade public live log dashboard (Streamlit)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/algoTrade
+EnvironmentFile=-/home/ec2-user/algoTrade/.env
+Environment=TZ=Asia/Kolkata
+ExecStart=/home/ec2-user/algoTrade/.venv/bin/streamlit run dashboard/live_log.py --server.address 0.0.0.0 --server.port 8501 --server.headless true
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

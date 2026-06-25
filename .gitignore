@@ -19,6 +19,9 @@ build/
 
 # Runtime outputs
 data/shoonya_session.json
+data/angelone_session.json
+data/watchlist.json
+data/dashboard_public.json
 data/algo_state.json
 data/public_ip_history.json
 logs/*

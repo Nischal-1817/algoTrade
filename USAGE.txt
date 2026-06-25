@@ -1,114 +1,102 @@
-Quick start (from this folder)
+Quick start
 
-1) Create venv and install (recommended — fixes "No module named NorenRestApiPy"):
+
+
+1) Create venv and install:
+
+
 
    python -m venv .venv
+
    .venv\Scripts\activate
+
    pip install -r requirements.txt
 
-   Or one-liner (PowerShell):
-   .\.venv\Scripts\pip.exe install -r requirements.txt
 
-   Always use .venv\Scripts\python.exe for scripts if you did not activate.
 
-2) pip install -r requirements.txt   (only if using system Python, not venv)
+   Or: .\.venv\Scripts\pip.exe install -r requirements.txt
 
-2) Backtest (Yahoo NSE history, no broker needed):
-   python scripts/run_backtest.py --symbol RELIANCE --start 2020-01-01
-   Open the HTML file written under reports\
 
-3) Dashboard:
-   streamlit run dashboard/app.py
 
-4) Test Groww login only (no orders):
-   python scripts/check_groww.py
+2) Backtest (Yahoo NSE data, no broker):
 
-Live orders stay OFF unless you set BOTH environment variables:
-ENABLE_LIVE_TRADING=1
-LIVE_TRADING_CONFIRM=I_UNDERSTAND_RISK
 
-Keep credentials.py out of git; copy from credentials.example.py.
 
---- API keys (Groww) ---
+   .\.venv\Scripts\python.exe scripts\run_backtest.py --strategy mean_reversion --symbol SBIN --start 2018-01-01
 
-Option A — credentials.py (what you have now):
-  copy credentials.example.py -> credentials.py
-  set API_KEY and API_Secret from https://groww.in/trade-api
 
-Option B — .env file:
-  copy .env.example -> .env
-  set GROWW_API_KEY and GROWW_API_SECRET
 
-Test login only (no orders):
-  python scripts/check_groww.py
+   Portfolio (4 stocks, Rs 20k):
 
---- Deploy / run options ---
 
-1) LOCAL (recommended to start)
-   - Backtests: no API key needed
-   - Dashboard: streamlit run dashboard/app.py  (opens browser on this PC)
 
-2) SCHEDULED BACKTESTS (Windows Task Scheduler)
-   - Action: python scripts\run_backtest.py --strategy mean_reversion --symbol RELIANCE
-   - Start in: this project folder
-   - Use full path to your venv\Scripts\python.exe
+   .\.venv\Scripts\python.exe scripts\run_portfolio_backtest.py --capital 20000 --symbols ICICIBANK,ITC,RELIANCE,TCS --start 2018-01-01
 
-3) DASHBOARD ON THE INTERNET (optional)
-   - Streamlit Community Cloud: push repo WITHOUT credentials.py or .env
-   - Set GROWW_* as secrets in Streamlit dashboard settings if you need broker features
-   - Backtests-only dashboard works without keys
 
-4) LIVE / AUTO TRADING (advanced — not fully built yet)
-   - Needs a PC or VPS running during NSE hours (9:15–15:30 IST)
-   - Set ENABLE_LIVE_TRADING=1 and LIVE_TRADING_CONFIRM=I_UNDERSTAND_RISK
-   - This repo does not yet run strategies on a daily cron with real orders; only dry-run + backtest
-   - Check SEBI/broker algo rules before going live
 
-Do NOT deploy credentials.py to GitHub or any public host.
+   Dashboard: streamlit run dashboard/app.py
 
---- Groww live trading (default) ---
 
-1) .venv\Scripts\python.exe scripts\validate_groww_setup.py
-2) Dry-run cycle:
-   set ALGO_SYMBOL=SBIN
-   set ALGO_MAX_CAPITAL=10000
-   .venv\Scripts\python.exe scripts\run_live_trading.py
-3) Dashboard: streamlit run dashboard/live_app.py
-4) Real orders: ENABLE_LIVE_TRADING=1, LIVE_TRADING_CONFIRM=I_UNDERSTAND_RISK, ALLOW_GROWW_ORDERS=1
 
-Groww creds in credentials.py: API_KEY + API_Secret from https://groww.in/trade-api
+3) Angel One live trading (credentials.py required)
 
---- AWS gateway (fixed IP for whitelist) ---
 
-See aws_gateway/DEPLOY.md
-  - Flask on EC2 + Elastic IP
-  - Whitelist EC2 IP on Groww
-  - Laptop: aws_gateway/scripts/call_gateway.py run-cycle
 
---- Shoonya (optional, ALGO_BROKER=shoonya) ---
+   Check connection + balance:
 
-1) pip install -r requirements.txt
 
-2) Copy credentials.example.py -> credentials.py (Shoonya section)
 
-3) Test login (no orders) — same flow as Shoonya support notebook:
-   .venv\Scripts\python.exe scripts\shoonya_notebook_login.py
-   or: python scripts/check_shoonya.py
+   .\.venv\Scripts\python.exe scripts\validate_angel_setup.py
 
-4) Dry-run one cycle (signal + simulated state, no broker orders):
-   set ALGO_SYMBOL=SBIN
-   set ALGO_ALLOWED_SYMBOLS=SBIN
-   set ALGO_MAX_CAPITAL=10000
-   python scripts/run_live_trading.py
 
-5) Live dashboard:
-   streamlit run dashboard/live_app.py
 
-6) Enable REAL orders only when ready (all three):
-   set ENABLE_LIVE_TRADING=1
-   set LIVE_TRADING_CONFIRM=I_UNDERSTAND_RISK
-   set ALLOW_SHOONYA_ORDERS=1
+   Dry-run one cycle (signals only, NO real orders):
 
-Schedule run_live_trading.py ~ 9:20 IST on trading days (Task Scheduler).
 
-Use ALGO_SYMBOL for bot only — not stocks you hold long-term elsewhere.
+
+   .\.venv\Scripts\python.exe scripts\run_live_trading.py --capital 20000 --symbols ICICIBANK,ITC,RELIANCE,TCS
+
+
+
+   REAL orders (only after you understand the risk):
+
+
+
+   $env:ENABLE_LIVE_TRADING="1"
+
+   $env:LIVE_TRADING_CONFIRM="I_UNDERSTAND_REAL_MONEY"
+
+   .\.venv\Scripts\python.exe scripts\run_live_trading.py --live --capital 20000
+
+
+
+   Run once per day after market close (3:30 PM IST) or before next open.
+
+   Whitelist EC2 IP <EC2_PUBLIC_IP> on Angel SmartAPI app.
+
+   Dry-run dynamic mode:
+
+   .\.venv\Scripts\python.exe scripts\run_live_trading.py --mode dynamic --capital 20000
+
+   Build / refresh watchlist (ranks Nifty 100 by backtest, keeps top 50):
+
+   .\.venv\Scripts\python.exe scripts\build_watchlist.py --universe nifty100 --top 50 --start 2018-01-01
+
+4) EC2 auto-trading (09:00-15:30 IST, dynamic 4 slots):
+
+   powershell -File scripts\deploy_to_ec2.ps1
+
+   Logs on server: ~/algoTrade/logs/live_service.log
+
+5) Public live log dashboard (orders, P&L, holdings):
+
+   Local:  streamlit run dashboard/live_log.py
+
+   EC2:    http://<EC2_PUBLIC_IP>:8501  (open port 8501 in AWS security group)
+
+   Optional password in .env:  DASHBOARD_PASSWORD=your_secret
+
+   Refresh snapshot: .\.venv\Scripts\python.exe scripts\export_dashboard_snapshot.py
+
+No API keys required for backtests only.
+

@@ -27,7 +27,7 @@ class Settings:
     slippage_pct: float = 0.05
     fast_sma: int = 20
     slow_sma: int = 50
-    # Groww: never place real orders unless both are set.
+    # Live orders: off unless both env vars are set (see USAGE.txt).
     enable_live_trading: bool = field(
         default_factory=lambda: os.getenv("ENABLE_LIVE_TRADING", "").lower() in ("1", "true", "yes")
     )

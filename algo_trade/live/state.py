@@ -1,4 +1,4 @@
-"""Persist algo-only position (never touches other holdings)."""
+"""Persist per-symbol live algo state (positions, Kelly history)."""
 
 from __future__ import annotations
 
@@ -6,78 +6,61 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from algo_trade.config import DATA_DIR
 
+STATE_PATH = DATA_DIR / "algo_state.json"
 
-def _state_path() -> Path:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    return DATA_DIR / "algo_state.json"
+
+@dataclass
+class SymbolState:
+    in_position: bool = False
+    entry_close: float | None = None
+    entry_price: float | None = None
+    qty: int = 0
+    bars_held: int = 0
+    entry_date: str | None = None
+    last_processed_bar: str | None = None
+    trade_returns_pct: list[float] = field(default_factory=list)
 
 
 @dataclass
 class AlgoState:
-    symbol: str
-    trading_symbol: str = ""
-    token: str = ""
-    in_position: bool = False
-    qty: int = 0
-    entry_close: float | None = None
-    entry_time: str | None = None
-    bars_held: int = 0
-    max_capital: float = 10_000.0
-    kelly_fraction: float = 0.05
-    bankroll_inr: float = 0.0
-    trades: List[dict[str, Any]] = field(default_factory=list)
-    last_action: str = "hold"
-    last_run_utc: str = ""
-    last_signal_note: str = ""
+    symbols: dict[str, SymbolState] = field(default_factory=dict)
+    last_run: str | None = None
+    portfolio_capital: float | None = None
 
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> AlgoState:
-        return cls(
-            symbol=d.get("symbol", ""),
-            trading_symbol=d.get("trading_symbol", ""),
-            token=d.get("token", ""),
-            in_position=bool(d.get("in_position", False)),
-            qty=int(d.get("qty", 0)),
-            entry_close=d.get("entry_close"),
-            entry_time=d.get("entry_time"),
-            bars_held=int(d.get("bars_held", 0)),
-            max_capital=float(d.get("max_capital", 10_000.0)),
-            kelly_fraction=float(d.get("kelly_fraction", 0.05)),
-            bankroll_inr=float(d.get("bankroll_inr", 0.0)),
-            trades=list(d.get("trades", [])),
-            last_action=d.get("last_action", "hold"),
-            last_run_utc=d.get("last_run_utc", ""),
-            last_signal_note=d.get("last_signal_note", ""),
-        )
+    def get_symbol(self, symbol: str) -> SymbolState:
+        sym = symbol.strip().upper().replace(".NS", "")
+        if sym not in self.symbols:
+            self.symbols[sym] = SymbolState()
+        return self.symbols[sym]
 
 
-def load_state() -> AlgoState | None:
-    path = _state_path()
-    if not path.exists():
-        return None
-    return AlgoState.from_dict(json.loads(path.read_text(encoding="utf-8")))
-
-
-def save_state(state: AlgoState) -> Path:
-    state.last_run_utc = datetime.now(timezone.utc).isoformat()
-    path = _state_path()
-    path.write_text(json.dumps(state.to_dict(), indent=2, default=str), encoding="utf-8")
-    return path
-
-
-def init_state(
-    symbol: str, trading_symbol: str, token: str, max_capital: float
-) -> AlgoState:
+def load_state() -> AlgoState:
+    if not STATE_PATH.exists():
+        return AlgoState()
+    try:
+        raw = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return AlgoState()
+    symbols: dict[str, SymbolState] = {}
+    for sym, data in (raw.get("symbols") or {}).items():
+        symbols[sym] = SymbolState(**data)
     return AlgoState(
-        symbol=symbol.upper().replace(".NS", ""),
-        trading_symbol=trading_symbol,
-        token=token,
-        max_capital=max_capital,
+        symbols=symbols,
+        last_run=raw.get("last_run"),
+        portfolio_capital=raw.get("portfolio_capital"),
     )
+
+
+def save_state(state: AlgoState) -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, Any] = {
+        "last_run": datetime.now(timezone.utc).isoformat(),
+        "portfolio_capital": state.portfolio_capital,
+        "symbols": {k: asdict(v) for k, v in state.symbols.items()},
+    }
+    STATE_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    state.last_run = payload["last_run"]
