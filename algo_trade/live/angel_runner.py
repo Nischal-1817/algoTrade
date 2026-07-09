@@ -112,6 +112,14 @@ def run_symbol_cycle(
         kelly_cfg = load_kelly_config()
         frac = kelly_fraction_from_trade_returns(sym_state.trade_returns_pct, config=kelly_cfg)
         qty, spend = position_size_inr(slice_capital, ltp, frac)
+        if qty <= 0 and ltp > 0 and slice_capital >= ltp:
+            logger.info(
+                "%s: Kelly qty=0 — buying 1 share (ltp=%.2f, slice=Rs%.0f)",
+                symbol,
+                ltp,
+                slice_capital,
+            )
+            qty, spend = 1, ltp
         result.update({"ltp": ltp, "kelly_fraction": frac, "qty": qty, "spend_inr": spend})
         if qty > 0:
             order = place_cnc_order(api, symbol, "BUY", qty, dry_run=dry_run)

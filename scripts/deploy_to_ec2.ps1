@@ -3,7 +3,7 @@
 param(
     [string]$Ec2Host = "<EC2_PUBLIC_IP>",
     [string]$User = "ec2-user",
-    [string]$Key = "$PSScriptRoot\..\shonya_key_pair.pem"
+    [string]$Key = $(if (Test-Path "$env:USERPROFILE\.ssh\algoTrade_ec2") { "$env:USERPROFILE\.ssh\algoTrade_ec2" } else { "$PSScriptRoot\..\shonya_key_pair.pem" })
 )
 
 $ErrorActionPreference = "Stop"
