@@ -1,7 +1,7 @@
 # Deploy algoTrade live trading to EC2 (from Windows PowerShell).
 
 param(
-    [string]$Ec2Host = "<EC2_PUBLIC_IP>",
+    [string]$Ec2Host = "",
     [string]$User = "ec2-user",
     [string]$Key = $(if (Test-Path "$env:USERPROFILE\.ssh\algoTrade_ec2") { "$env:USERPROFILE\.ssh\algoTrade_ec2" } else { "$PSScriptRoot\..\shonya_key_pair.pem" })
 )

@@ -6,7 +6,7 @@
 
 # ANGELONE_API_KEY = ""
 
-# ANGELONE_CLIENT_ID = ""       # e.g. AAAL865855
+# ANGELONE_CLIENT_ID = ""       # e.g. A12345
 
 # ANGELONE_PASSWORD = ""
 
