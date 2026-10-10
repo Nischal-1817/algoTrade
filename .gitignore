@@ -36,3 +36,6 @@ htmlcov/
 .idea/
 .vscode/
 *.swp
+
+# Reference books/papers (copyrighted, keep local only)
+*.pdf
