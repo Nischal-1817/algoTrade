@@ -46,10 +46,11 @@ def _sync_from_broker(sym_state: SymbolState, holdings: list[dict[str, Any]], sy
         sym_state.qty = 0
 
 
-def _record_exit(sym_state: SymbolState, exit_price: float) -> None:
+def _record_exit(state: AlgoState, sym_state: SymbolState, exit_price: float) -> None:
     if sym_state.entry_price and sym_state.entry_price > 0:
         ret = (exit_price / sym_state.entry_price - 1.0) * 100.0
         sym_state.trade_returns_pct.append(ret)
+        state.trade_returns_pct.append(ret)
     sym_state.in_position = False
     sym_state.entry_close = None
     sym_state.entry_price = None
@@ -64,6 +65,7 @@ def run_symbol_cycle(
     symbol: str,
     *,
     slice_capital: float,
+    state: AlgoState,
     sym_state: SymbolState,
     holdings: list[dict[str, Any]],
     dry_run: bool,
@@ -110,7 +112,7 @@ def run_symbol_cycle(
     if action == "buy" and not sym_state.in_position:
         ltp = get_ltp(api, symbol)
         kelly_cfg = load_kelly_config()
-        frac = kelly_fraction_from_trade_returns(sym_state.trade_returns_pct, config=kelly_cfg)
+        frac = kelly_fraction_from_trade_returns(state.trade_returns_pct, config=kelly_cfg)
         qty, spend = position_size_inr(slice_capital, ltp, frac)
         if qty <= 0 and ltp > 0 and slice_capital >= ltp:
             logger.info(
@@ -141,7 +143,7 @@ def run_symbol_cycle(
             order = place_cnc_order(api, symbol, "SELL", qty, dry_run=dry_run)
             result["order"] = order
             if not dry_run and order and not order.get("skipped"):
-                _record_exit(sym_state, ltp)
+                _record_exit(state, sym_state, ltp)
 
     return result
 
@@ -242,6 +244,7 @@ def run_dynamic_slot_cycle(
                 api,
                 sym,
                 slice_capital=slice_capital,
+                state=state,
                 sym_state=sym_state,
                 holdings=holdings,
                 dry_run=dry_run,
@@ -274,6 +277,7 @@ def run_dynamic_slot_cycle(
                     api,
                     sym,
                     slice_capital=slice_capital,
+                    state=state,
                     sym_state=sym_state,
                     holdings=holdings,
                     dry_run=dry_run,
@@ -350,6 +354,7 @@ def run_portfolio_cycle(
                 api,
                 sym,
                 slice_capital=slice_capital,
+                state=state,
                 sym_state=sym_state,
                 holdings=holdings,
                 dry_run=dry_run,

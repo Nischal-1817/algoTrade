@@ -30,6 +30,9 @@ class AlgoState:
     symbols: dict[str, SymbolState] = field(default_factory=dict)
     last_run: str | None = None
     portfolio_capital: float | None = None
+    # Pooled across all symbols so Kelly sizing reflects the strategy's edge
+    # instead of stalling at min_fraction until one symbol alone closes 5 trades.
+    trade_returns_pct: list[float] = field(default_factory=list)
 
     def get_symbol(self, symbol: str) -> SymbolState:
         sym = symbol.strip().upper().replace(".NS", "")
@@ -52,6 +55,7 @@ def load_state() -> AlgoState:
         symbols=symbols,
         last_run=raw.get("last_run"),
         portfolio_capital=raw.get("portfolio_capital"),
+        trade_returns_pct=list(raw.get("trade_returns_pct") or []),
     )
 
 
@@ -60,6 +64,7 @@ def save_state(state: AlgoState) -> None:
     payload: dict[str, Any] = {
         "last_run": datetime.now(timezone.utc).isoformat(),
         "portfolio_capital": state.portfolio_capital,
+        "trade_returns_pct": state.trade_returns_pct,
         "symbols": {k: asdict(v) for k, v in state.symbols.items()},
     }
     STATE_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
